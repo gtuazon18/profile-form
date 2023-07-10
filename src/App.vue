@@ -8,18 +8,27 @@
           </div>
           <div class="card-body">
             <div class="form-group">
-              <k-input :name="'fname'" :label="'First Name'" :pattern="'[A-Za-z]+'" :minlength="2" :validation-message="'First name should only contain alphabetic characters.'" :required="true"></k-input>
+              <k-input :name="'fname'" v-model="fname" :label="'First Name'" :pattern="'[A-Za-z]+'" :minlength="2"
+                :validation-message="'First name should only contain alphabetic characters.'" :required="true"></k-input>
             </div>
             <div class="form-group">
-              <k-input :name="'lname'" :label="'Last Name'" :pattern="'[A-Za-z]+'" :minlength="2" :validation-message="'Last name should only contain alphabetic characters.'" :required="true"></k-input>
+              <k-input :name="'lname'" :label="'Last Name'" :pattern="'[A-Za-z]+'" :minlength="2"
+                :validation-message="'Last name should only contain alphabetic characters.'" :required="true"></k-input>
             </div>
-            <json-forms :data="data" :schema="schema" :uischema="uischema" :renderers="renderers" @change="onChange"></json-forms>
+            <json-forms 
+            :data="data" 
+            :schema="schema" 
+            :uischema="uischema" 
+            :renderers="renderers"
+            v-model="birthday" @focus="handleChange">
+            </json-forms>
             <div class="form-group" v-if="isMinimumAgeReached">
-              <k-input :name="'email'" v-model="email" :label="'Email'" pattern="[^\s@]+@[^\s@]+\.[^\s@]+" :validation-message="'Please enter a valid email address.'" :required="true"></k-input>
+              <k-input :name="'email'" v-model="email" :label="'Email'" pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
+                :validation-message="'Please enter a valid email address.'" :required="true"></k-input>
             </div>
           </div>
           <div class="card-footer text-center">
-            <button type="submit" :disabled="!isMinimumAgeReached">Next</button>
+            <kbutton :theme-color="'dark'" :disabled="!isMinimumAgeReached">Next</kbutton>
           </div>
         </div>
       </div>
@@ -34,65 +43,64 @@
 import { Input } from '@progress/kendo-vue-inputs';
 import '@progress/kendo-theme-default/dist/all.css';
 import { JsonForms } from '@jsonforms/vue';
-import { vanillaRenderers } from '@jsonforms/vue-vanilla';
+import { Button } from '@progress/kendo-vue-buttons';
 import { DatePicker } from '@progress/kendo-vue-dateinputs';
-// import { markRaw } from 'vue';
 const renderers = [
-  ...vanillaRenderers,
+  {
+    tester: (uischema: any) => uischema.type === 'Control' && uischema.scope === '#/properties/birthday/',
+    renderer: DatePicker,
+  },
   // here you can add custom renderers
 ];
 
 export default {
   components: {
     'k-input': Input,
+    'kbutton':Button,
     DatePicker,
     JsonForms,
   },
+  computed: {
+    isMinimumAgeReached() {
+      const today = new Date();
+      const minimumAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+      const birthday = new Date(this.birthday);
+      return birthday <= minimumAgeDate;
+    },
+  },
   data() {
     return {
+      fname:'',
       email: '',
-      birthday:'',
+      birthday: new Date(),
       data: {
+        birthday: '',
         number: 5,
       },
       schema: {
         properties: {
           birthday: { type: 'string', format: 'date' },
         },
-        required:['birthday']
+        required: ['birthday']
       },
       uischema: {
         type: 'VerticalLayout',
         elements: [
           {
             type: 'Control', scope: '#/properties/birthday/',
-            options: {
-              render:DatePicker
-            },
           }
         ],
       },
       success: false,
       renderers: Object.freeze(renderers),
-      // renderers: [{ tester: (uischema:any) => uischema.type === 'Control' && uischema.scope === '#/properties/birthday/', renderer: markRaw(DatePicker) }],
     };
   },
   methods: {
     handleSubmit() {
       this.success = true;
     },
-    onChange(event){
-      const { data } = event;
-      console.log(data.birthday)
-      this.data = data;
-    }
-  },
-  computed: {
-    isMinimumAgeReached() {
-      const today = new Date();
-      const minimumAgeDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
-      const birthday = new Date(this.data.birthday);
-      return birthday <= minimumAgeDate;
+    handleChange() {
+      this.data.birthday = this.birthday.toString();
     },
   },
 };
